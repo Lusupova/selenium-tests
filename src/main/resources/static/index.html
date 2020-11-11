@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>User database</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css"
+          integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous"/>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+</head>
+
+<body>
+
+<div id="content" class="container mt-4">
+    <div>
+        <form class="form-inline" @submit.prevent="processForm">
+            <p v-if="errors.length">
+                <b>Please correct the following error(s):</b>
+            <ul>
+                <li v-for="error in errors">{{ error }}</li>
+            </ul>
+            </p>
+            <div class="form-group mb-2">
+                <label for="nameField" class="sr-only">Name</label>
+                <input type="text" class="form-control" id="nameField" placeholder="Bob" minlength="1" v-model="currName" v-on:keydown.enter.prevent>
+            </div>
+            <div class="form-group mx-sm-3 mb-2">
+                <label for="ageField" class="sr-only">Age</label>
+                <input type="number" class="form-control" id="ageField" placeholder="22" v-model="currAge" v-on:keydown.enter.prevent>
+            </div>
+            <button type="submit" class="btn btn-dark mb-2">Add user</button>
+        </form>
+    </div>
+    <div class="table-responsive">
+        <table id="usersTable" class="table">
+            <thead class="thead-dark">
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Name</th>
+                <th scope="col">Age</th>
+                <th scope="col">Action</th>
+            </tr>
+            </thead>
+            <tbody v-if="users.length > 0">
+            <tr v-for="user in users" :key="user.id">
+                <td>{{user.id}}</td>
+                <td>{{user.name}}</td>
+                <td>{{user.age}}</td>
+                <td>
+                    <button type="button" class="btn btn-dark" v-on:click="deleteUser(user.id)">Delete</button>
+                </td>
+            </tr>
+            </tbody>
+            <tbody v-else>
+            <tr>
+                <td colspan="3" style="text-align: center;">No users added so far</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.11/vue.min.js"
+        integrity="sha256-ngFW3UnAN0Tnm76mDuu7uUtYEcG3G5H1+zioJw3t+68=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"
+        integrity="sha256-T/f7Sju1ZfNNfBh7skWn0idlCBcI3RwdLSS4/I7NQKQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js"
+        integrity="sha256-VeNaFBVDhoX3H+gJ37DpT/nTuZTdjYro9yBruHjVmoQ=" crossorigin="anonymous"></script>
+<script lang="javascript">
+    new Vue({
+      el: '#content',
+      data () {
+        return {
+          users: [],
+          errors: [],
+          currName: null,
+          currAge: null,
+        }
+      },
+      mounted () {
+        this.loadUsers();
+      },
+      computed: {
+        isValidValue() {
+            return 0 < this.dateRangeValue && this.currAge <= 100;
+        },
+      },
+      methods: {
+        processForm: function (e) {
+          if (this.currName && this.currAge && this.currAge >= 1 && this.currAge <= 100) {
+            this.saveUser();
+          }
+          this.errors = [];
+          if (!this.currName) {
+            this.errors.push('Name is required.');
+          }
+          if (!this.currAge) {
+            this.errors.push('Age is required.');
+          }
+          if (this.currAge < 1 || this.currAge > 100) {
+            this.errors.push('Age must be between 1 and 100.');
+          }
+        },
+        loadUsers: function () {
+          axios
+            .get('/users/all')
+            .then(response => (this.users = response.data));
+        },
+        saveUser: function () {
+          axios
+            .post('/users', {
+              name: this.currName,
+              age: this.currAge
+            })
+            .then(response => (this.loadUsers()));
+        },
+        deleteUser: function (userId) {
+          axios
+            .delete('/users/' + userId)
+            .then(response => (this.loadUsers()));
+        },
+      }
+    })
+</script>
+</body>
+</html>
